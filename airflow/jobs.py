@@ -215,8 +215,8 @@ class SchedulerJob(BaseJob):
             self.num_runs = 1
         else:
             self.num_runs = num_runs
-        self.refresh_dags_every = refresh_dags_every	
-        self.do_pickle = do_pickle	
+        self.refresh_dags_every = refresh_dags_every
+        self.do_pickle = do_pickle
         super(SchedulerJob, self).__init__(*args, **kwargs)
 
         self.heartrate = conf.getint('scheduler', 'SCHEDULER_HEARTBEAT_SEC')
@@ -553,6 +553,10 @@ class SchedulerJob(BaseJob):
                 logging.info("Loop took: {} seconds".format(duration_sec))
                 try:
                     self.import_errors(dagbag)
+                except Exception as e:
+                    logging.exception(e)
+                try:
+                    dagbag.kill_zombies()
                 except Exception as e:
                     logging.exception(e)
                 try:
