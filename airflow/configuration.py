@@ -1,5 +1,5 @@
-from future import standard_library
-standard_library.install_aliases()
+# from future import standard_library
+# standard_library.install_aliases()
 from builtins import str
 from configparser import ConfigParser
 import errno
