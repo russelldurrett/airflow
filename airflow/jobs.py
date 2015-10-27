@@ -38,7 +38,6 @@ class BaseJob(Base):
     a collection of task instance runs, but should have it's own state, start
     and end time.
     """
-    extend_existing=True
     __tablename__ = "job"
 
     id = Column(Integer, primary_key=True)
@@ -59,6 +58,7 @@ class BaseJob(Base):
 
     __table_args__ = (
         Index('job_type_heart', job_type, latest_heartbeat),
+        {'extend_existing':True},
     )
 
     def __init__(
@@ -747,40 +747,54 @@ class LocalTaskJob(BaseJob):
     def on_kill(self):
         self.process.terminate()
 
-class ManualJob(BaseJob): 
+
+
+class DagExecutionJob(BaseJob):
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'DagExecutionJob'
+    }
 
     def __init__(
             self,
-            task_instance,
+            dag,
             ignore_dependencies=False,
             force=False,
             mark_success=False,
             pickle_id=None,
             task_start_date=None,
             *args, **kwargs):
-        self.task_instance = task_instance
+        self.dag = dag
+        self.dag_id = dag.dag_id
         self.ignore_dependencies = ignore_dependencies
         self.force = force
         self.pickle_id = pickle_id
         self.mark_success = mark_success
         self.task_start_date = task_start_date
-        super(LocalTaskJob, self).__init__(*args, **kwargs)
+        self.mark_success = mark_success
+        super(DagExecutionJob, self).__init__(*args, **kwargs)
+
 
     def _execute(self):
-        command = self.task_instance.command(
-            raw=True,
-            ignore_dependencies=self.ignore_dependencies,
-            force=self.force,
-            pickle_id=self.pickle_id,
-            mark_success=self.mark_success,
-            task_start_date=self.task_start_date,
-            job_id=self.id,
-        )
-        self.process = subprocess.Popen(['bash', '-c', command])
-        return_code = None
-        while return_code is None:
-            self.heartbeat()
-            return_code = self.process.poll()
+        for task in self.dag.tasks: 
+            #make TI and kick off run 
+            ti = models.TaskInstance(task, datetime.now())
+            lj = LocalTaskJob(ti)
+            lj._execute()
 
-    def on_kill(self):
-        self.process.terminate()
+
+
+
+# for t in dag.tasks: 
+#     dag.get_task(task_id).get_flat_relatives(upstream=False):
+#     key = (ti.dag_id, t.task_id, execution_date)
+#     if key in tasks_to_run:
+#         wont_run.append(key)
+#         del tasks_to_run[key]
+        
+
+
+
+
+
+

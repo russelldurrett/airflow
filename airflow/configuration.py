@@ -104,7 +104,10 @@ executor = SequentialExecutor
 # The SqlAlchemy connection string to the metadata database.
 # SqlAlchemy supports many different database engine, more information
 # their website
-sql_alchemy_conn = sqlite:///{AIRFLOW_HOME}/airflow.db
+# sql_alchemy_conn = postgresql://localhost/airflow
+SQL_ALCHEMY_CONN = postgresql://localhost/airflow 
+
+#sqlite:///{AIRFLOW_HOME}/airflow.db
 
 # The amount of parallelism as a setting to the executor. This defines
 # the max number of task instances that should run simultaneously

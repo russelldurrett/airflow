@@ -1873,11 +1873,6 @@ def label_link(v, c, m, p):
     return Markup("<a href='{url}'>{m.label}</a>".format(**locals()))
 
 
-from airflow.jobs import ManualJob
-
-
-
-
 
 
 class ChartModelView(wwwutils.DataProfilingMixin, AirflowModelView):
