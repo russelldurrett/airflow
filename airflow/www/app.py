@@ -40,11 +40,11 @@ import chartkick
 import jinja2
 import markdown
 from sqlalchemy import or_
-
+import flask_login
 import airflow
 from airflow import jobs, models, settings, utils
 from airflow.configuration import conf
-from airflow.models import State, login_manager
+from airflow.models import State
 from airflow.settings import Session
 from airflow.utils import AirflowException
 from airflow.www import utils as wwwutils
@@ -75,6 +75,45 @@ class VisiblePasswordInput(widgets.PasswordInput):
 
 class VisiblePasswordField(PasswordField):
     widget = VisiblePasswordInput()
+
+
+
+DEFAULT_USERNAME = 'airflow'
+
+login_manager = flask_login.LoginManager()
+login_manager.login_view = 'airflow.login'  # Calls login() bellow
+login_manager.login_message = None
+
+
+from airflow.models import User 
+from airflow.forms import LoginForm, CreateUserForm
+
+
+
+@login_manager.user_loader
+def load_user(userid):
+    session = settings.Session()
+    user = session.query(models.User).filter(models.User.id == userid).first()
+    session.expunge_all()
+    session.commit()
+    session.close()
+    return user
+
+
+def login(self, request):
+    session = settings.Session()
+    user = session.query(models.User).filter(
+        models.User.username == DEFAULT_USERNAME).first()
+    if not user:
+        user = models.User(
+            username=DEFAULT_USERNAME,
+            is_superuser=True)
+    session.merge(user)
+    session.commit()
+    flask_login.login_user(user)
+    session.commit()
+    session.close()
+    return redirect(request.args.get("next") or url_for("index"))
 
 
 def superuser_required(f):
@@ -213,6 +252,72 @@ class TreeForm(Form):
 @app.route('/')
 def index():
     return redirect(url_for('admin.index'))
+
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    login_form = LoginForm()
+    if login_form.validate_on_submit():
+        user = load_user(login_form.email.data)
+        if user:
+            # print "found user"
+            if bcrypt.check_password_hash(user.password_hash, login_form.password.data):
+                user.authenticated = True
+                db.session.add(user)
+                db.session.commit()
+                login_user(user, remember=True)
+                flash('logged in!', 'success')
+                return redirect(url_for("index"))
+            else: 
+                flash("Password doesn't match for " + user.first_name, 'error')
+                # print "password didnt match for " + user.first_name 
+        else: 
+            flash("couldn't find that user... try registering a new user", 'normal')
+    #also supply create_user_form here for convenience
+    create_user_form = CreateUserForm()
+    return render_template("login.html", login_form=login_form, create_user_form=create_user_form)
+
+
+
+@app.route("/users/create", methods=["POST"])
+def create_user():
+    form = CreateUserForm()
+    # add some validations / cleansing 
+    with load_user(form.email.data) as user:
+        if user:
+            if bcrypt.check_password_hash(user.password_hash, login_form.password.data):
+                login_user(user)
+                user.authenticated = True
+                db.session.add(user)
+                db.session.commit()
+            flash('email already exists!', 'error')
+            return redirect(url_for("login"))
+    new_user = User()
+    new_user.first_name = form.first_name.data
+    new_user.last_name = form.last_name.data 
+    new_user.email = form.email.data
+    new_user.password_hash = bcrypt.generate_password_hash(form.password.data)
+    db.session.add(new_user)
+    db.session.commit()
+    login_user(new_user, remember=True)
+    flash("new user created and logged in", 'success')
+    return redirect(url_for("index"))
+    # return render_template("login.html", form=form)
+
+
+@app.route("/logout", methods=["GET"])
+@login_required
+def logout():
+    """Logout the current user."""
+    user = current_user
+    user.authenticated = False
+    db.session.add(user)
+    db.session.commit()
+    logout_user()
+    return render_template("logout.html")
+
+
 
 
 @app.route('/health')

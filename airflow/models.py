@@ -65,13 +65,6 @@ else:
 
 
 
-DEFAULT_USERNAME = 'airflow'
-
-login_manager = flask_login.LoginManager()
-login_manager.login_view = 'airflow.login'  # Calls login() bellow
-login_manager.login_message = None
-
-
 
 class User(Base):
     __tablename__ = "user"
@@ -79,6 +72,8 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     username = Column(String(ID_LEN), unique=True)
     email = Column(String(500))
+    password_hash = Column(String(500))
+    
 
     def __repr__(self):
         return self.username
@@ -109,34 +104,6 @@ class User(Base):
 
 # models.User = User  # hack!
 # del User
-
-
-@login_manager.user_loader
-def load_user(userid):
-    session = settings.Session()
-    user = session.query(models.User).filter(models.User.id == userid).first()
-    session.expunge_all()
-    session.commit()
-    session.close()
-    return user
-
-
-def login(self, request):
-    session = settings.Session()
-    user = session.query(models.User).filter(
-        models.User.username == DEFAULT_USERNAME).first()
-    if not user:
-        user = models.User(
-            username=DEFAULT_USERNAME,
-            is_superuser=True)
-    session.merge(user)
-    session.commit()
-    flask_login.login_user(user)
-    session.commit()
-    session.close()
-    return redirect(request.args.get("next") or url_for("index"))
-
-
 
 
 
