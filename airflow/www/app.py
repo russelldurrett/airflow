@@ -27,6 +27,7 @@ from flask.ext.admin import base
 from flask.ext.admin.contrib.sqla import ModelView
 from flask.ext.cache import Cache
 from flask import request
+from flask_login import login_required, current_user, logout_user
 import sqlalchemy as sqla
 from wtforms import (
     widgets,
@@ -41,20 +42,13 @@ import markdown
 from sqlalchemy import or_
 
 import airflow
-from airflow import jobs, login, models, settings, utils
+from airflow import jobs, models, settings, utils
 from airflow.configuration import conf
-from airflow.models import State
+from airflow.models import State, login_manager
 from airflow.settings import Session
 from airflow.utils import AirflowException
 from airflow.www import utils as wwwutils
 
-
-login_required = login.login_required
-current_user = login.current_user
-logout_user = login.logout_user
-
-
-from airflow import default_login as login
 if conf.getboolean('webserver', 'AUTHENTICATE'):
     try:
         # Environment specific login
@@ -63,9 +57,7 @@ if conf.getboolean('webserver', 'AUTHENTICATE'):
         logging.error(
             "authenticate is set to True in airflow.cfg, "
             "but airflow_login failed to import")
-login_required = login.login_required
-current_user = login.current_user
-logout_user = login.logout_user
+
 
 AUTHENTICATE = conf.getboolean('webserver', 'AUTHENTICATE')
 if AUTHENTICATE is False:
@@ -169,7 +161,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_POOL_RECYCLE'] = 3600
 app.secret_key = conf.get('webserver', 'SECRET_KEY')
 
-login.login_manager.init_app(app)
+login_manager.init_app(app)
 
 cache = Cache(
     app=app, config={'CACHE_TYPE': 'filesystem', 'CACHE_DIR': '/tmp'})
