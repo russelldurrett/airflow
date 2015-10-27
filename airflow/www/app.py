@@ -1873,6 +1873,13 @@ def label_link(v, c, m, p):
     return Markup("<a href='{url}'>{m.label}</a>".format(**locals()))
 
 
+from airflow.jobs import ManualJob
+
+
+
+
+
+
 class ChartModelView(wwwutils.DataProfilingMixin, AirflowModelView):
     verbose_name = "chart"
     verbose_name_plural = "charts"
@@ -1975,6 +1982,7 @@ mv = ChartModelView(
     models.Chart, Session,
     name="Charts", category="Data Profiling")
 admin.add_view(mv)
+
 
 admin.add_link(
     base.MenuLink(
