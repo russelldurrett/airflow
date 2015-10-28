@@ -16,7 +16,7 @@ from sqlalchemy.orm.session import make_transient
 from airflow import executors, models, settings, utils
 from airflow.configuration import conf
 from airflow.utils import AirflowException, State
-
+from airflow.models import * 
 
 Base = models.Base
 ID_LEN = models.ID_LEN
@@ -763,6 +763,7 @@ class DagExecutionJob(BaseJob):
             mark_success=False,
             pickle_id=None,
             task_start_date=None,
+            state=State.QUEUED
             *args, **kwargs):
         self.dag = dag
         self.dag_id = dag.dag_id
@@ -772,14 +773,24 @@ class DagExecutionJob(BaseJob):
         self.mark_success = mark_success
         self.task_start_date = task_start_date
         self.mark_success = mark_success
+        self.state = state
         super(DagExecutionJob, self).__init__(*args, **kwargs)
 
 
     def _execute(self):
+        session = settings.Session()
         for task in self.dag.tasks: 
             #make TI and kick off run 
             ti = models.TaskInstance(task, datetime.now())
+            ti.job_id = self.id
+            ti.state == State.QUEUED
             lj = LocalTaskJob(ti)
+            session.add(ti)
+            session.add(lj)
+            session.commit()
+            ti = session.query(TaskInstance).filter(TaskInstance.id == ti.id).first()
+            lj = session.query(LocalTaskJob).filter(LocalTaskJob.id == lj.id).first()
+            ti.job_id = lj.id 
             lj._execute()
 
 

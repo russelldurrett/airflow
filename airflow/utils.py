@@ -57,6 +57,7 @@ class State(object):
     Static class with task instance states constants and color method to
     avoid hardcoding.
     """
+    NEWLY_MINTED = 'newly_minted'
     QUEUED = "queued"
     RUNNING = "running"
     SUCCESS = "success"
@@ -66,7 +67,9 @@ class State(object):
     UPSTREAM_FAILED = "upstream_failed"
     SKIPPED = "skipped"
 
+
     state_color = {
+        NEWLY_MINTED: 'gray',
         QUEUED: 'gray',
         RUNNING: 'lime',
         SUCCESS: 'green',
@@ -198,17 +201,17 @@ def initdb():
         session.commit()
 
     # Known event types
-    KET = models.KnownEventType
-    if not session.query(KET).filter(KET.know_event_type == 'Holiday').first():
-        session.add(KET(know_event_type='Holiday'))
-    if not session.query(KET).filter(KET.know_event_type == 'Outage').first():
-        session.add(KET(know_event_type='Outage'))
-    if not session.query(KET).filter(
-            KET.know_event_type == 'Natural Disaster').first():
-        session.add(KET(know_event_type='Natural Disaster'))
-    if not session.query(KET).filter(
-            KET.know_event_type == 'Marketing Campaign').first():
-        session.add(KET(know_event_type='Marketing Campaign'))
+    # KET = models.KnownEventType
+    # if not session.query(KET).filter(KET.know_event_type == 'Holiday').first():
+    #     session.add(KET(know_event_type='Holiday'))
+    # if not session.query(KET).filter(KET.know_event_type == 'Outage').first():
+    #     session.add(KET(know_event_type='Outage'))
+    # if not session.query(KET).filter(
+    #         KET.know_event_type == 'Natural Disaster').first():
+    #     session.add(KET(know_event_type='Natural Disaster'))
+    # if not session.query(KET).filter(
+    #         KET.know_event_type == 'Marketing Campaign').first():
+    #     session.add(KET(know_event_type='Marketing Campaign'))
     session.commit()
     session.close()
 

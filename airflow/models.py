@@ -73,7 +73,7 @@ class User(Base):
     username = Column(String(ID_LEN), unique=True)
     email = Column(String(500))
     password_hash = Column(String(500))
-    
+
 
     def __repr__(self):
         return self.username
@@ -497,6 +497,7 @@ class TaskInstance(Base):
 
     __tablename__ = "task_instance"
 
+    id = Column(Integer, primary_key=True)
     task_id = Column(String(ID_LEN), primary_key=True)
     dag_id = Column(String(ID_LEN), primary_key=True)
     execution_date = Column(DateTime, primary_key=True)
@@ -520,7 +521,7 @@ class TaskInstance(Base):
         Index('ti_pool', pool, state, priority_weight),
     )
 
-    def __init__(self, task, execution_date, state=None, job=None):
+    def __init__(self, task, execution_date, state=State.QUEUED, job=None):
         self.dag_id = task.dag_id
         self.task_id = task.task_id
         self.execution_date = execution_date
@@ -533,6 +534,7 @@ class TaskInstance(Base):
         self.unixname = getpass.getuser()
         if job:
             self.job_id = job.id
+
 
     def command(
             self,

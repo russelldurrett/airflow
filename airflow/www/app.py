@@ -48,6 +48,8 @@ from airflow.models import State
 from airflow.settings import Session
 from airflow.utils import AirflowException
 from airflow.www import utils as wwwutils
+from airflow.models import * 
+from airflow.jobs import * 
 
 if conf.getboolean('webserver', 'AUTHENTICATE'):
     try:
