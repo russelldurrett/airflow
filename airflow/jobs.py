@@ -763,7 +763,7 @@ class DagExecutionJob(BaseJob):
             mark_success=False,
             pickle_id=None,
             task_start_date=None,
-            state=State.QUEUED
+            state=State.QUEUED,
             *args, **kwargs):
         self.dag = dag
         self.dag_id = dag.dag_id
@@ -788,7 +788,7 @@ class DagExecutionJob(BaseJob):
             session.add(ti)
             session.add(lj)
             session.commit()
-            ti = session.query(TaskInstance).filter(TaskInstance.id == ti.id).first()
+            ti = session.query(TaskInstance).filter(TaskInstance.task_id == ti.task_id).filter(TaskInstance.dag_id == ti.dag_id).first()
             lj = session.query(LocalTaskJob).filter(LocalTaskJob.id == lj.id).first()
             ti.job_id = lj.id 
             lj._execute()

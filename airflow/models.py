@@ -497,7 +497,6 @@ class TaskInstance(Base):
 
     __tablename__ = "task_instance"
 
-    id = Column(Integer, primary_key=True)
     task_id = Column(String(ID_LEN), primary_key=True)
     dag_id = Column(String(ID_LEN), primary_key=True)
     execution_date = Column(DateTime, primary_key=True)
