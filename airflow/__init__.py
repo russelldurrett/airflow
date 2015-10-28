@@ -19,15 +19,15 @@ DAGS_FOLDER = os.path.expanduser(conf.get('core', 'DAGS_FOLDER'))
 if DAGS_FOLDER not in sys.path:
     sys.path.append(DAGS_FOLDER)
 
-from airflow import default_login as login
-if conf.getboolean('webserver', 'AUTHENTICATE'):
-    try:
-        # Environment specific login
-        import airflow_login as login
-    except ImportError:
-        logging.error(
-            "authenticate is set to True in airflow.cfg, "
-            "but airflow_login failed to import")
+# from airflow import default_login as login
+# if conf.getboolean('webserver', 'AUTHENTICATE'):
+#     try:
+#         # Environment specific login
+#         import airflow_login as login
+#     except ImportError:
+#         logging.error(
+#             "authenticate is set to True in airflow.cfg, "
+#             "but airflow_login failed to import")
 
 
 class AirflowViewPlugin(BaseView):

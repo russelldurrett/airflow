@@ -128,6 +128,9 @@ class BaseJob(Base):
         if job.state == State.SHUTDOWN:
             self.kill()
 
+        # if job.state == State.QUEUED:
+        #     self.run()
+
         if job.latest_heartbeat:
             sleep_for = self.heartrate - (
                 datetime.now() - job.latest_heartbeat).total_seconds()
@@ -784,14 +787,16 @@ class DagExecutionJob(BaseJob):
             ti = models.TaskInstance(task, datetime.now())
             ti.job_id = self.id
             ti.state == State.QUEUED
-            lj = LocalTaskJob(ti)
+            ti.dag_id = self.dag.dag_id
+            # lj = LocalTaskJob(ti)
+            # lj.state = State.QUEUED
             session.add(ti)
-            session.add(lj)
+            # session.add(lj)
             session.commit()
-            ti = session.query(TaskInstance).filter(TaskInstance.task_id == ti.task_id).filter(TaskInstance.dag_id == ti.dag_id).first()
-            lj = session.query(LocalTaskJob).filter(LocalTaskJob.id == lj.id).first()
-            ti.job_id = lj.id 
-            lj._execute()
+            # ti = session.query(TaskInstance).filter(TaskInstance.task_id == ti.task_id).filter(TaskInstance.dag_id == ti.dag_id).first()
+            # lj = session.query(LocalTaskJob).filter(LocalTaskJob.id == lj.id).first()
+            # ti.job_id = lj.id 
+            # lj._execute()
 
 
 
