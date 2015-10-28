@@ -135,6 +135,7 @@ def upgrade():
     if 'task_instance' not in tables:
         op.create_table(
             'task_instance',
+            sa.Column('id', sa.Integer(), nullable=False, primary_key=True, autoincrement=True),
             sa.Column('task_id', sa.String(length=250), nullable=False),
             sa.Column('dag_id', sa.String(length=250), nullable=False),
             sa.Column('execution_date', sa.DateTime(), nullable=False),
@@ -149,7 +150,7 @@ def upgrade():
             sa.Column('pool', sa.String(length=50), nullable=True),
             sa.Column('queue', sa.String(length=50), nullable=True),
             sa.Column('priority_weight', sa.Integer(), nullable=True),
-            sa.PrimaryKeyConstraint('task_id', 'dag_id', 'execution_date')
+            # sa.PrimaryKeyConstraint('id')
         )
         op.create_index(
             'ti_dag_state',

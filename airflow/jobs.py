@@ -152,7 +152,10 @@ class BaseJob(Base):
         # Adding an entry in the DB
         session = settings.Session()
         self.state = State.RUNNING
-        session.add(self)
+        if not self.id: 
+            session.add(self)
+        else:
+            session.merge(self)
         session.commit()
         id_ = self.id
         make_transient(self)
@@ -160,6 +163,7 @@ class BaseJob(Base):
 
         # Run
         self._execute()
+        #better to submit tasks and poll for completion... 
 
         # Marking the success in the DB
         self.end_date = datetime.now()
@@ -781,22 +785,22 @@ class DagExecutionJob(BaseJob):
 
 
     def _execute(self):
+        # figure out how to traverse a dependency map 
         session = settings.Session()
+        session.merge(self)
+        session.commit()
         for task in self.dag.tasks: 
             #make TI and kick off run 
             ti = models.TaskInstance(task, datetime.now())
-            ti.job_id = self.id
-            ti.state == State.QUEUED
             ti.dag_id = self.dag.dag_id
-            # lj = LocalTaskJob(ti)
-            # lj.state = State.QUEUED
+            ti.job_id = self.id 
+            ti.state == State.QUEUED
             session.add(ti)
-            # session.add(lj)
             session.commit()
-            # ti = session.query(TaskInstance).filter(TaskInstance.task_id == ti.task_id).filter(TaskInstance.dag_id == ti.dag_id).first()
-            # lj = session.query(LocalTaskJob).filter(LocalTaskJob.id == lj.id).first()
-            # ti.job_id = lj.id 
-            # lj._execute()
+            #ti.submit() instead! 
+            ti.run()
+
+
 
 
 
