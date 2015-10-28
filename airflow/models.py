@@ -882,7 +882,7 @@ class TaskInstance(Base):
         Runs the task instance.
         """
         session = settings.Session()
-        task = session.query(DagModel).filter(DagModel.dag_id==self.dag_id).first()
+        task = self.task
         logging.warning("Task may not be updated!")
         self.refresh_from_db(session)
         session.commit()
