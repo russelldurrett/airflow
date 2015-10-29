@@ -883,13 +883,30 @@ class TaskInstance(Base):
         """
         session = settings.Session()
         task = self.task
-        logging.warning("Task may not be updated!")
         self.refresh_from_db(session)
         session.commit()
         self.job_id = job_id
         iso = datetime.now().isoformat()
         self.hostname = socket.gethostname()
         self.operator = task.__class__.__name__
+
+        # if we want to log to files. find way to do both!
+        import logging 
+        task_logger = logging.getLogger('task_logger')
+        task_logger.setLevel(logging.DEBUG)
+        logformat = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        log_relative = '/'.join([self.dag_id, self.task_id])
+        execution_date = str(self.execution_date)
+        #this is still throwing an unknown string format error on log view!
+        execution_date = execution_date.replace(' ', 'T').format(**locals())
+        log_path = conf.get('core', 'base_log_folder') + '/' + log_relative +  '/' + execution_date
+        channel = logging.FileHandler(log_path, mode='a', encoding=None, delay=False)
+        channel.setFormatter(logformat)
+        task_logger.addHandler(channel)
+        old_logging = logging
+        logging = task_logger
+
+        logging.warning("Task may not be updated!")
 
         if self.state == State.RUNNING:
             logging.warning("Another instance is running, skipping.")
@@ -1004,6 +1021,7 @@ class TaskInstance(Base):
                 logging.exception(e3)
 
         session.commit()
+        logging = old_logging
 
     def dry_run(self):
         task = self.task

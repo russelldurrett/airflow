@@ -26,12 +26,12 @@ def sanitize(text):
 #this is where pipeline-generated bash commands come in.... 
 bash_commands = ('echo "hi russ"', 'echo "hello again"')
 conclusion_command = 'echo "all done"'
-conclusion = BashOperator(task_id='conclude', bash_command=conclusion_command, dag=dag)
+conclusion = BashOperator(task_id='conclude', bash_command=conclusion_command, dag=dag, pool='default')
 
 for cmd in bash_commands: 
 	cmd.rstrip()
 	run_this = BashOperator(
-	  task_id=sanitize(cmd), bash_command=cmd, dag=dag)
+	  task_id=sanitize(cmd), bash_command=cmd, dag=dag, pool='default')
 	run_this.set_downstream(conclusion)
 
 

@@ -904,14 +904,14 @@ class Airflow(BaseView):
     @expose('/log')
     @login_required
     def log(self):
-        BASE_LOG_FOLDER = os.path.expanduser(
-            conf.get('core', 'BASE_LOG_FOLDER'))
+        BASE_LOG_FOLDER = os.path.expanduser(conf.get('core', 'BASE_LOG_FOLDER'))
         dag_id = request.args.get('dag_id')
         task_id = request.args.get('task_id')
         execution_date = request.args.get('execution_date')
+        if 'T' in execution_date: 
+            execution_date = execution_date.replace('T', '\ ')
         dag = dagbag.get_dag(dag_id)
-        log_relative = "/{dag_id}/{task_id}/{execution_date}".format(
-            **locals())
+        log_relative = "/{dag_id}/{task_id}/{execution_date}"
         loc = BASE_LOG_FOLDER + log_relative
         loc = loc.format(**locals())
         log = ""
@@ -931,7 +931,7 @@ class Airflow(BaseView):
                     log += "".join(f.readlines())
                     f.close()
                 except:
-                    log = "Log file isn't where expected.\n".format(loc)
+                    log = "Log file isn't where expected: {loc}\n".format(loc=loc)
             else:
                 WORKER_LOG_SERVER_PORT = \
                     conf.get('celery', 'WORKER_LOG_SERVER_PORT')
