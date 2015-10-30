@@ -787,8 +787,14 @@ class DagExecutionJob(BaseJob):
     def _execute(self):
         # figure out how to traverse a dependency map 
         session = settings.Session()
-        session.merge(self)
-        session.commit()
+        saved_jobs = session.query(DagExecutionJob).all()
+        # id = lambda x: x.id 
+        if self.id in [j.id for j in saved_jobs]:
+            session.merge(self)
+            session.commit()
+        else: 
+            session.add(self)
+            session.commit()
         for task in self.dag.tasks: 
             #make TI and kick off run 
             ti = models.TaskInstance(task, datetime.now())
@@ -798,20 +804,95 @@ class DagExecutionJob(BaseJob):
             session.add(ti)
             session.commit()
             #ti.submit() instead! 
-            ti.run()
+            # ti.run()
+
+    def save(self):
+        session = settings.Session()        
+        saved_jobs = session.query(DagExecutionJob).all()
+        # id = lambda x: x.id 
+        if self.id in [j.id for j in saved_jobs]:
+            session.merge(self)
+            session.commit()
+            return True 
+        else: 
+            session.add(self)
+            session.commit()
+            return True
 
 
 
+    def run(self): 
 
+        utils.pessimistic_connection_handling()
+        # Setting up logging
 
+        self.start_date = datetime.now()
+        # pickle = DagPickle(self.dag)
 
-# for t in dag.tasks: 
-#     dag.get_task(task_id).get_flat_relatives(upstream=False):
-#     key = (ti.dag_id, t.task_id, execution_date)
-#     if key in tasks_to_run:
-#         wont_run.append(key)
-#         del tasks_to_run[key]
+        self.save()
         
+        identifier = self.id 
+        # logging.basicConfig(
+        #     filename=filename,
+        #     level=settings.LOGGING_LEVEL,
+        #     format=settings.LOG_FORMAT)
+        # print("Logging into: " + filename)
+
+        # if we want to log to files. find way to do both!
+        import logging 
+
+        log_folder = os.path.expanduser(conf.get('core', 'BASE_LOG_FOLDER'))
+        directory = log_folder + "/job_{self.id}".format(**locals())
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        log_filename = "{directory}/job_{self.id}.run_log.txt".format(**locals())
+        task_logger = logging.getLogger('job_{}_logger'.format(self.id))
+        task_logger.setLevel(logging.DEBUG)
+        logformat = logging.Formatter("%(asctime)s  %(name)s  %(levelname)s  %(message)s")
+        channel = logging.FileHandler(log_filename, mode='a', encoding=None, delay=False)
+        channel.setFormatter(logformat)
+        task_logger.addHandler(channel)
+        # old_logging = logging
+        logging = task_logger
+        logging.info("logging rerouted to {log_filename}")
+
+
+        # session = settings.Session()
+        # logging.info('Loading pickle id {args.pickle}'.format(**locals()))
+        # dag_pickle = session.query(
+        #     DagPickle).filter(DagPickle.id == args.pickle).first()
+        # if not dag_pickle:
+        #     raise AirflowException("Who hid the pickle!? [missing pickle]")
+
+        # dag = dag_pickle.pickle
+
+        # figure out how to traverse a dependency map 
+        session = settings.Session()
+        # executor = DEFAULT_EXECUTOR
+        from airflow.executors import LocalBashExecutor
+        executor = LocalBashExecutor(logging=logging)
+        executor.start()
+        self.task_instances = []
+
+        for task in self.dag.tasks: 
+            #make TI and kick off run 
+            ti = models.TaskInstance(task, datetime.now())
+            ti.dag_id = self.dag.dag_id
+            ti.job_id = self.id 
+            ti.state == State.QUEUED
+            ti.save()
+            self.task_instances.append(ti)
+            logging.info("{} saved task instance {}".format(self.__class__.__name__, ti.id))
+
+
+        for ti in sorted(self.task_instances, key=lambda x: x.priority_weight, reverse=True):
+            logging.info("{} queuing task {} with priority {} on executor {}".format(self.__class__.__name__, ti.id, ti.priority_weight, executor.__class__.__name__))
+            # print("Sending to executor.")
+            executor.queue_task_instance(ti)
+            executor.heartbeat()
+
+        executor.heartbeat()
+        executor.end()
 
 
 

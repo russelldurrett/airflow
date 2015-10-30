@@ -5,6 +5,7 @@ from airflow.executors.base_executor import BaseExecutor
 from airflow.executors.local_executor import LocalExecutor
 from airflow.executors.celery_executor import CeleryExecutor
 from airflow.executors.sequential_executor import SequentialExecutor
+from airflow.executors.local_bash_executor import LocalBashExecutor
 
 # TODO Fix this emergency fix
 try:

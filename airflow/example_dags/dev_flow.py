@@ -26,16 +26,15 @@ bash_commands = (
 	'sleep 5',
 	'touch /Users/red/airflow/logs/aaa/helloagain',
 	'sleep 5',
-	# 'rm /Users/red/airflow/logs/aaa/*'
+	'rm /Users/red/airflow/logs/aaa/*'
 	)
 
 valid_chars='-_.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 def sanitize(text):
 	return ''.join(c for c in text if c in valid_chars)
 
-from collections import OrderedDict
 def dict_from_cmd_list(lst):
-	dic = OrderedDict() 
+	dic = {} 
 	for c in lst: 
 		n = sanitize(c)
 		while n in dic.keys(): 
@@ -45,11 +44,6 @@ def dict_from_cmd_list(lst):
 
 command_dict = dict_from_cmd_list(bash_commands)
 tasks = []
-
-
-
-
-
 
 for n,c in command_dict.iteritems(): 
 	task = BashOperator(task_id=n, bash_command=c, dag=dag, pool='default')

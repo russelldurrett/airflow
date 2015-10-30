@@ -10,7 +10,7 @@ PARALLELISM = conf.getint('core', 'PARALLELISM')
 
 class BaseExecutor(object):
 
-    def __init__(self, parallelism=PARALLELISM):
+    def __init__(self, parallelism=PARALLELISM, logging=logging):
         """
         Class to derive in order to interface with executor-type systems
         like Celery, Mesos, Yarn and the likes.
@@ -23,6 +23,7 @@ class BaseExecutor(object):
         self.queued_tasks = {}
         self.running = {}
         self.event_buffer = {}
+        self.logging=logging
 
     def start(self):  # pragma: no cover
         """

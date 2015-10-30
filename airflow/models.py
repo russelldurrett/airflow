@@ -840,6 +840,22 @@ class TaskInstance(Base):
             "{ti.execution_date} [{ti.state}]>"
         ).format(ti=self)
 
+
+    def save(self):
+        session = settings.Session()        
+        saved_tis = session.query(TaskInstance).all()
+        # id = lambda x: x.id 
+        if self.id in [ti.id for ti in saved_tis]:
+            session.merge(self)
+            session.commit()
+            return True 
+        else: 
+            session.add(self)
+            session.commit()
+            return True
+
+
+
     def ready_for_retry(self):
         """
         Checks on whether the task instance is in the right state and timeframe
@@ -890,23 +906,23 @@ class TaskInstance(Base):
         self.hostname = socket.gethostname()
         self.operator = task.__class__.__name__
 
-        # if we want to log to files. find way to do both!
-        import logging 
-        task_logger = logging.getLogger('task_logger')
-        task_logger.setLevel(logging.DEBUG)
-        logformat = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        log_relative = '/'.join([self.dag_id, self.task_id])
-        execution_date = str(self.execution_date)
-        #this is still throwing an unknown string format error on log view!
-        execution_date = execution_date.replace(' ', 'T').format(**locals())
-        log_path = conf.get('core', 'base_log_folder') + '/' + log_relative +  '/' + execution_date
-        channel = logging.FileHandler(log_path, mode='a', encoding=None, delay=False)
-        channel.setFormatter(logformat)
-        task_logger.addHandler(channel)
-        old_logging = logging
-        logging = task_logger
+        # # if we want to log to files. find way to do both!
+        # import logging 
+        # task_logger = logging.getLogger('task_logger')
+        # task_logger.setLevel(logging.DEBUG)
+        # logformat = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        # log_relative = '/'.join([self.dag_id, self.task_id])
+        # execution_date = str(self.execution_date)
+        # #this is still throwing an unknown string format error on log view!
+        # execution_date = execution_date.replace(' ', 'T').format(**locals())
+        # log_path = conf.get('core', 'base_log_folder') + '/' + log_relative +  '/' + execution_date
+        # channel = logging.FileHandler(log_path, mode='a', encoding=None, delay=False)
+        # channel.setFormatter(logformat)
+        # task_logger.addHandler(channel)
+        # old_logging = logging
+        # logging = task_logger
 
-        logging.warning("Task may not be updated!")
+        # logging.warning("Task may not be updated!")
 
         if self.state == State.RUNNING:
             logging.warning("Another instance is running, skipping.")
@@ -1021,7 +1037,7 @@ class TaskInstance(Base):
                 logging.exception(e3)
 
         session.commit()
-        logging = old_logging
+        # logging = old_logging
 
     def dry_run(self):
         task = self.task
